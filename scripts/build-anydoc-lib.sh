@@ -137,5 +137,14 @@ dest="$crate_dir/lib/$lib_dir"
 mkdir -p "$dest"
 cp "$crate_dir/target/$target/release/$lib_name" "$dest/$lib_name"
 
+# Rust's prebuilt std carries embedded LLVM bitcode (.llvmbc/.llvmcmd). Since
+# go 1.26.11 cmd/go rejects cgo linker inputs with LTO sections ("disallowed
+# LTO section"), so drop them: the linker never reads them, the code is unchanged.
+case "$target" in
+  *linux*)
+    objcopy --remove-section=.llvmbc --remove-section=.llvmcmd "$dest/$lib_name"
+    ;;
+esac
+
 echo "Wrote $dest/$lib_name"
 echo "Build WeKnora with the archive: go build -tags anydoc ./cmd/server"
